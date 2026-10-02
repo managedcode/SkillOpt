@@ -1,0 +1,1 @@
+Rank the proposed edits for expected general improvement to the current skill. Return only JSON with `selected_indices`, a list of distinct zero-based integer indexes in priority order. Select no more than the requested budget. Do not include explanations outside JSON.

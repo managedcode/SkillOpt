@@ -11,6 +11,10 @@
 
 > 📖 **For installation, data preparation, training/eval commands, configuration, and framework internals, start with the versioned [SkillOpt documentation](https://github.com/microsoft/SkillOpt/blob/main/docs/index.md). A concise rendered overview is available in the [Documentation & Reproduction Guide](https://microsoft.github.io/SkillOpt/docs/guideline.html), and longer-form engineering analysis appears on the [Technical Blog](https://microsoft.github.io/SkillOpt/blog/). We also maintain a [Changelog](CHANGELOG.md) for released and unreleased changes.**
 
+## ManagedCode .NET package
+
+This managedcode fork also contains **ManagedCode.SkillOpt**, a .NET 10 library for in-process text-space skill optimization. It accepts separate target and optimizer `IChatClient` instances plus a Microsoft.Extensions.AI.Evaluation `IEvaluator`. Install `ManagedCode.SkillOpt` from NuGet and see the [C# package guide](src/ManagedCode.SkillOpt/README.md) for its API and [parity matrix](docs/Parity.md) for the exact implemented scope. Release tags use `dotnet-v<version>` so the C# package never reuses upstream Python tags. The Python research engine and its benchmark, plugin, and SkillOpt-Sleep integrations remain the upstream implementation; the NuGet package does not execute Python or depend on a remote optimizer service.
+
 ---
 
 ## News 🔥🔥🔥

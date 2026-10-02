@@ -1,0 +1,1 @@
+Improve the supplied Agent Skill using the observed trajectories. Preserve correct and unrelated guidance, add only supported general instructions, and do not memorize individual answers. Return only the complete replacement skill Markdown. Do not use a JSON wrapper or code fence.

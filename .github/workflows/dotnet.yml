@@ -1,0 +1,103 @@
+name: .NET package
+
+on:
+  push:
+    branches: [main]
+    tags: [dotnet-v*]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: 10.0.x
+
+jobs:
+  verify:
+    name: Format, build, test, and pack
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore ManagedCode.SkillOpt.sln
+
+      - name: Verify formatting
+        run: dotnet format ManagedCode.SkillOpt.sln --verify-no-changes --no-restore
+
+      - name: Build
+        run: dotnet build ManagedCode.SkillOpt.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test ManagedCode.SkillOpt.sln --configuration Release --no-build
+
+      - name: Pack NuGet package
+        run: dotnet pack src/ManagedCode.SkillOpt/ManagedCode.SkillOpt.csproj --configuration Release --no-build --output ./artifacts/packages -p:RepositoryCommit="$(git rev-parse HEAD)"
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: managedcode-skillopt-nuget
+          path: ./artifacts/packages/*.nupkg
+          retention-days: 5
+
+  publish:
+    name: Publish NuGet package and GitHub release
+    if: startsWith(github.ref, 'refs/tags/dotnet-v')
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Download package
+        uses: actions/download-artifact@v5
+        with:
+          name: managedcode-skillopt-nuget
+          path: ./artifacts/packages
+
+      - name: Validate tag matches package version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(sed -n 's:.*<Version>\([^<]*\)</Version>.*:\1:p' Directory.Build.props)
+          test -n "$VERSION"
+          test "$GITHUB_REF_NAME" = "dotnet-v$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Publish package
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push ./artifacts/packages/ManagedCode.SkillOpt.${{ steps.version.outputs.version }}.nupkg --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Verify NuGet availability
+        env:
+          PACKAGE_VERSION: ${{ steps.version.outputs.version }}
+        run: curl --fail --retry 12 --retry-delay 10 --retry-all-errors --silent --show-error --output /dev/null "https://api.nuget.org/v3-flatcontainer/managedcode.skillopt/$PACKAGE_VERSION/managedcode.skillopt.$PACKAGE_VERSION.nupkg"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ManagedCode.SkillOpt v${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          files: ./artifacts/packages/ManagedCode.SkillOpt.${{ steps.version.outputs.version }}.nupkg

@@ -1,0 +1,1 @@
+Summarize durable optimization lessons across these epochs. Keep only strategy guidance that is supported by repeated evidence and useful for future reflection. Return a concise Markdown memory only. Do not rewrite the skill or include task-specific answers.

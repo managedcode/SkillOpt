@@ -1,0 +1,1 @@
+Apply the selected optimizer suggestions to the current Agent Skill. Preserve correct content, make only the requested general improvements, and return the complete replacement skill as Markdown. Return no JSON wrapper and no code fence.
