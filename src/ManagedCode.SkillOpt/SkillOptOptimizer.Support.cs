@@ -201,7 +201,9 @@ public static partial class SkillOptOptimizer
             throw new ArgumentException("This checkpoint has an uncertain in-flight operation or completed run and cannot be resumed safely.", nameof(request));
         }
 
-        if (state.Seed != request.Options.RandomSeed || !string.Equals(state.DatasetFingerprint,
+        if (state.CompletedSteps < 0 || state.CompletedEpochs < 0 || state.RolloutsUsed < 0 ||
+            state.OptimizerCallsUsed < 0 || state.EvaluationCallsUsed < 0 ||
+            state.Seed != request.Options.RandomSeed || !string.Equals(state.DatasetFingerprint,
                 fingerprint, StringComparison.Ordinal) || state.CompletedSteps > request.Options.Epochs * request.Options.StepsPerEpoch ||
             state.RolloutsUsed > request.Options.MaxRollouts || state.OptimizerCallsUsed > request.Options.MaxOptimizerCalls ||
             state.EvaluationCallsUsed > request.Options.MaxEvaluationCalls)

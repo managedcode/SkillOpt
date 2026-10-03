@@ -4,6 +4,12 @@ Changes to the ManagedCode.SkillOpt .NET port are documented here. This file
 covers the NuGet package only; the original Microsoft Python project's history
 remains in the [upstream repository](https://github.com/microsoft/SkillOpt).
 
+## 0.1.4 — 2026-10-03
+
+- Reject negative usage and progress counters in externally supplied resume state
+  before any model or evaluator call, preventing corrupted state from understating
+  spend or replaying completed work.
+
 ## 0.1.3 — 2026-10-03
 
 - Correct the packaged README installation example to reference the released 0.1.3 package.

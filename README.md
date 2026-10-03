@@ -9,7 +9,7 @@ The library targets .NET 10 and uses caller-provided [Microsoft.Extensions.AI](h
 ## Install
 
 ```xml
-<PackageReference Include="ManagedCode.SkillOpt" Version="0.1.3" />
+<PackageReference Include="ManagedCode.SkillOpt" Version="0.1.4" />
 ```
 
 ## What it implements

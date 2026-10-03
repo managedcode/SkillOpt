@@ -163,6 +163,46 @@ public sealed partial class SkillOptOptimizerTests
     }
 
     [Fact]
+    public async Task OptimizeAsyncRejectsNegativeResumeCountersBeforeCallingModels()
+    {
+        var checkpoints = new List<SkillOptRunState>();
+        var request = CreateRequest(new DelegateChatClient(_ => "failure"), new DelegateChatClient(_ => "bad json"),
+            new ScoreEvaluator(_ => 0.5)) with
+        {
+            Checkpoint = (state, _) =>
+            {
+                checkpoints.Add(state);
+                return ValueTask.CompletedTask;
+            }
+        };
+        await SkillOptOptimizer.OptimizeAsync(request);
+        var safe = LastSafeTrainingCheckpoint(checkpoints);
+        var invalidStates = new Func<SkillOptRunState, SkillOptRunState>[]
+        {
+            state => state with { RolloutsUsed = -1 },
+            state => state with { OptimizerCallsUsed = -1 },
+            state => state with { EvaluationCallsUsed = -1 },
+            state => state with { CompletedSteps = -1 },
+            state => state with { CompletedEpochs = -1 }
+        };
+
+        foreach (var makeInvalid in invalidStates)
+        {
+            var target = new DelegateChatClient(_ => "must not run");
+            var optimizer = new DelegateChatClient(_ => "must not run");
+            await Assert.ThrowsAsync<ArgumentException>(() => SkillOptOptimizer.OptimizeAsync(request with
+            {
+                TargetChatClient = target,
+                OptimizerChatClient = optimizer,
+                Checkpoint = null,
+                ResumeState = makeInvalid(safe)
+            }));
+            Assert.Empty(target.SeenMessages);
+            Assert.Empty(optimizer.SeenMessages);
+        }
+    }
+
+    [Fact]
     public async Task OptimizeAsyncRejectsUnsupportedOptionsBeforeCallingModels()
     {
         var target = new DelegateChatClient(_ => "must not run");

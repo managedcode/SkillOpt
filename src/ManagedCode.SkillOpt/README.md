@@ -5,7 +5,7 @@ ManagedCode.SkillOpt is the .NET 10 in-process C# port of Microsoft's original P
 ## Install
 
 ```xml
-<PackageReference Include="ManagedCode.SkillOpt" Version="0.1.3" />
+<PackageReference Include="ManagedCode.SkillOpt" Version="0.1.4" />
 ```
 
 ## Run an optimization
