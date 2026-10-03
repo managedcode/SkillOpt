@@ -1,6 +1,6 @@
 version: 2
 updates:
-  - package-ecosystem: "pip"
+  - package-ecosystem: "nuget"
     directory: "/"
     schedule:
       interval: "monthly"
@@ -12,17 +12,6 @@ updates:
           - "minor"
           - "patch"
 
-  - package-ecosystem: "npm"
-    directory: "/plugins/dsh"
-    schedule:
-      interval: "monthly"
-    groups:
-      minor-and-patch:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
   - package-ecosystem: "github-actions"
     directory: "/"
     groups:

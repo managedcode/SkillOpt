@@ -1,11 +1,11 @@
 # ManagedCode.SkillOpt
 
-ManagedCode.SkillOpt optimizes one Markdown Agent Skill in-process on .NET 10. It uses a caller-supplied target `IChatClient`, a separate optimizer `IChatClient`, and the Microsoft.Extensions.AI.Evaluation `IEvaluator` contract. No Python runtime, subprocess, hosted optimizer, provider SDK, or model HTTP implementation is included.
+ManagedCode.SkillOpt is the .NET 10 in-process C# port of Microsoft's original Python [SkillOpt](https://github.com/microsoft/SkillOpt) text-space optimizer. It uses a caller-supplied target `IChatClient`, a separate optimizer `IChatClient`, and Microsoft's `IEvaluator` contract. No Python runtime, subprocess, hosted optimizer, provider SDK, or custom model HTTP transport is included.
 
 ## Install
 
 ```xml
-<PackageReference Include="ManagedCode.SkillOpt" Version="0.1.1" />
+<PackageReference Include="ManagedCode.SkillOpt" Version="0.1.3" />
 ```
 
 ## Run an optimization

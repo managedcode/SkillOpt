@@ -14,6 +14,6 @@
     <RepositoryUrl>https://github.com/managedcode/SkillOpt</RepositoryUrl>
     <PackageProjectUrl>https://github.com/managedcode/SkillOpt</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>0.1.2</Version>
+    <Version>0.1.3</Version>
   </PropertyGroup>
 </Project>

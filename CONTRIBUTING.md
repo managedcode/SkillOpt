@@ -1,48 +1,36 @@
-# Contributing to SkillOpt
+# Contributing to ManagedCode.SkillOpt
 
-Thank you for your interest in contributing! SkillOpt welcomes contributions of all kinds.
+ManagedCode.SkillOpt is the C#/.NET port maintained in this fork of Microsoft's
+original Python [SkillOpt](https://github.com/microsoft/SkillOpt) project. Keep
+changes within the documented .NET port scope; do not reintroduce Python engines,
+subprocesses, provider SDKs, custom model transports, or required cloud services.
 
-## Getting Started
+## Prerequisites
+
+- .NET 10 SDK
+- Git
+
+## Build and test
 
 ```bash
-git clone https://github.com/microsoft/SkillOpt.git
-cd SkillOpt
-python -m pip install -e ".[dev,docs]"
+dotnet restore ManagedCode.SkillOpt.sln
+dotnet format ManagedCode.SkillOpt.sln --verify-no-changes
+dotnet build ManagedCode.SkillOpt.sln --configuration Release
+dotnet test ManagedCode.SkillOpt.sln --configuration Release
 ```
 
-## How to Contribute
+The test project is `tests/ManagedCode.SkillOpt.Tests`. Put prompts and authored
+instruction text in tracked resource files; keep public contracts typed and async
+work cancellable. Update `docs/Parity.md` when the implemented scope or upstream
+coverage changes.
 
-### 🐛 Bug Reports
-Open a GitHub issue with reproduction steps, expected/actual behavior, and your config file (remove API keys).
+## Pull requests and releases
 
-### 🔧 Add a Benchmark
-See the [guide](docs/guide/new-benchmark.md) and use the scaffold at
-`skillopt/envs/_template/`. Register the adapter lazily in both
-`scripts/train.py` and `scripts/eval_only.py`, and add focused tests.
-
-### 🤖 Add a Model Backend
-First check whether the built-in `openai_compatible` backend covers the
-provider. Otherwise follow the function-based backend contract in the
-[backend guide](docs/guide/new-backend.md), including routing, configuration,
-token accounting, and no-network tests.
-
-### 📝 Improve Documentation
-```bash
-python -m mkdocs serve   # Preview at http://localhost:8000
-```
-
-## Pull Request Process
-
-1. Fork the repo and create a feature branch
-2. Make changes and run focused tests plus `python -m pytest -q`
-3. Submit a PR with a clear description
-4. For documentation changes, run `python -m mkdocs build --strict`
-5. Ensure CI passes
-
-## Code Style
-- Follow existing patterns in the codebase
-- Use type hints for function signatures
-- Keep docstrings concise
+Keep pull requests focused and run the checks above. CI executes the canonical
+.NET workflow at `.github/workflows/dotnet.yml`. NuGet releases use the version in
+`Directory.Build.props` and an immutable `dotnet-v<version>` tag; never reuse or
+move upstream Python release tags.
 
 ## License
-By contributing, you agree your contributions are licensed under the [MIT License](LICENSE).
+
+Contributions are licensed under the [MIT License](LICENSE).
