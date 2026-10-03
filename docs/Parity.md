@@ -2,7 +2,7 @@
 
 ## Source provenance
 
-The C# library is maintained in this GitHub fork of [`microsoft/SkillOpt`](https://github.com/microsoft/SkillOpt). Its base is upstream commit [`fa4ca184573e42ec11472959dd57422381418096`](https://github.com/microsoft/SkillOpt/commit/fa4ca184573e42ec11472959dd57422381418096). Upstream reports MIT license, package version 0.2.0, and copyright Microsoft Corporation (2026); the fork retains the upstream `LICENSE`. The C# package starts at independent NuGet version 0.1.0.
+The C# library is maintained in this GitHub fork of [`microsoft/SkillOpt`](https://github.com/microsoft/SkillOpt). Its base is upstream commit [`fa4ca184573e42ec11472959dd57422381418096`](https://github.com/microsoft/SkillOpt/commit/fa4ca184573e42ec11472959dd57422381418096). Upstream reports MIT license, package version 0.2.0, and copyright Microsoft Corporation (2026); the fork retains the upstream `LICENSE`. The C# package is released as independent NuGet version 0.1.1.
 
 Primary reviewed upstream implementation: `skillopt/engine/trainer.py`, `skillopt/gradient/reflect.py`, `skillopt/gradient/aggregate.py`, `skillopt/optimizer/clip.py`, `skillopt/evaluation/gate.py`, `skillopt/optimizer/slow_update.py`, and `skillopt/optimizer/meta_skill.py`. The upstream training guide is `docs/guide/training-loop.md`.
 
@@ -10,7 +10,7 @@ Primary reviewed upstream implementation: `skillopt/engine/trainer.py`, `skillop
 
 | Upstream behavior | C# coverage |
 |---|---|
-| Frozen target rollout against changing skill Markdown | One caller-provided `TargetChatClient` instance is reused across all cases and skill revisions. Cases carry multi-message history. |
+| Frozen target rollout against changing skill Markdown | One caller-provided `TargetChatClient` instance is reused across all cases and skill revisions. Cases carry multi-message history. An optional typed `TargetMessageFactory` receives the untouched case messages and candidate skill separately for every initial, training, selection, and test rollout; the existing message composer remains the default. |
 | Evaluate rollouts | Microsoft `IEvaluator`; caller selects one named numeric metric, raw range, and explicit higher-is-better/lower-is-better direction. All returned numeric, boolean, and string metrics plus reasons, interpretations, and diagnostics remain in typed per-case evidence. |
 | Reflect from failures and successes | Separate outcome groups and file-backed reflection prompts; `FailureOnly` is configurable. Actual target responses and scores are included. |
 | Hierarchical patch aggregation | Repeated bounded merge batches; deterministic concatenation fallback on malformed aggregate JSON. |

@@ -12,6 +12,9 @@ internal static class OptimizationHelpers
     {
         var builder = new StringBuilder();
         builder.Append("run:").Append(request.RunIdentity).Append('\0');
+        builder.Append("target-message-factory:")
+            .Append(request.TargetMessageFactory is null ? "default" : "custom")
+            .Append('\0');
         builder.Append("initial:").Append(request.InitialSkill).Append('\0');
         builder.Append("options:").Append(JsonSerializer.Serialize(request.Options)).Append('\0');
         AppendSplit(builder, "training", request.TrainingCases);
@@ -63,7 +66,13 @@ internal static class OptimizationHelpers
         Func<CancellationToken, ValueTask>? beforeTargetCall = null,
         Func<CancellationToken, ValueTask>? beforeEvaluationCall = null)
     {
-        var messages = AddSkill(item.Messages, skill);
+        IReadOnlyList<ChatMessage>? messages = request.TargetMessageFactory is { } factory
+            ? factory(item.Messages, skill)
+            : AddSkill(item.Messages, skill);
+        if (messages is null)
+        {
+            throw new InvalidOperationException("Target message factory returned null messages.");
+        }
         if (beforeTargetCall is not null)
         {
             await beforeTargetCall(cancellationToken);

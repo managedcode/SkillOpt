@@ -27,4 +27,6 @@ A checkpoint callback is asynchronous and awaited before each target, optimizer,
 
 `ScoreDirection` makes minimization explicit (for example, a privacy-event count); scores are normalized to a higher-is-better objective for candidate ranking. Final split reports preserve every official evaluator metric as typed per-case evidence. An optional synchronous `CandidateGate` receives the candidate and its full selection report before the optimizer can accept it, allowing product code to enforce privacy or other hard constraints even when mean quality improves.
 
+An optional `TargetMessageFactory` receives each untouched case message list and the current candidate skill as separate arguments for every rollout. The caller returns the exact target conversation, which allows candidate skill text to remain a distinct System message without merging or rewriting frozen scenario context. The default composer remains unchanged when the callback is omitted. Its stable behavior/version must be represented in `RunIdentity`.
+
 See [Parity](Parity.md) for supported semantics and known deviations from the Python research framework.

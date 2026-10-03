@@ -4,6 +4,11 @@ All notable changes to SkillOpt are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/) and the format is based on
 [Keep a Changelog](https://keepachangelog.com/).
 
+## ManagedCode.SkillOpt .NET 0.1.1 - 2026-10-03
+
+### Added
+- Optional typed `TargetMessageFactory` receives frozen case messages and candidate skill text separately for every target rollout, while the default message composition remains unchanged.
+
 ## [Unreleased]
 
 ### Added

@@ -29,6 +29,54 @@ public sealed partial class SkillOptOptimizerTests
     }
 
     [Fact]
+    public async Task OptimizeAsyncUsesTargetMessageFactoryForEverySplitAndPreservesFrozenSystemContext()
+    {
+        var factoryInputs = new List<(IReadOnlyList<ChatMessage> Messages, string Candidate)>();
+        var target = new DelegateChatClient(messages =>
+            messages.Any(message => message.Role == ChatRole.System &&
+                                    message.Text == "Candidate skill:\noriginal skill")
+                ? "baseline" : "improved");
+        var optimizer = new DelegateChatClient(_ =>
+            "{\"edits\":[{\"op\":\"append\",\"content\":\"Candidate instruction\"}]}");
+        var evaluator = new ScoreEvaluator(messages =>
+            messages.First(message => message.Role == ChatRole.System).Text ==
+                "Candidate skill:\noriginal skill" ? 0 : 1);
+        var request = CreateRequest(target, optimizer, evaluator) with
+        {
+            TrainingCases = [CreateFrozenCase("train", "training prompt")],
+            SelectionCases = [CreateFrozenCase("selection", "selection prompt")],
+            TestCases = [CreateFrozenCase("test", "test prompt")],
+            TargetMessageFactory = (messages, candidate) =>
+            {
+                factoryInputs.Add((messages.ToArray(), candidate));
+                return [new ChatMessage(ChatRole.System, $"Candidate skill:\n{candidate}"), .. messages];
+            }
+        };
+
+        var result = await SkillOptOptimizer.OptimizeAsync(request);
+
+        Assert.Contains("Candidate instruction", result.BestSkill, StringComparison.Ordinal);
+        Assert.Equal(5, factoryInputs.Count);
+        Assert.Contains(factoryInputs, input => input.Candidate == "original skill" &&
+            input.Messages[0].Text == "Frozen scenario context" && input.Messages[1].Text == "training prompt");
+        Assert.Contains(factoryInputs, input => input.Candidate == "original skill" &&
+            input.Messages[0].Text == "Frozen scenario context" && input.Messages[1].Text == "selection prompt");
+        Assert.Contains(factoryInputs, input => input.Candidate.Contains("Candidate instruction", StringComparison.Ordinal) &&
+            input.Messages[0].Text == "Frozen scenario context" && input.Messages[1].Text == "selection prompt");
+        Assert.Contains(factoryInputs, input => input.Candidate == "original skill" &&
+            input.Messages[0].Text == "Frozen scenario context" && input.Messages[1].Text == "test prompt");
+        Assert.Contains(factoryInputs, input => input.Candidate.Contains("Candidate instruction", StringComparison.Ordinal) &&
+            input.Messages[0].Text == "Frozen scenario context" && input.Messages[1].Text == "test prompt");
+        Assert.All(target.SeenMessages, messages =>
+        {
+            Assert.Equal(ChatRole.System, messages[0].Role);
+            Assert.StartsWith("Candidate skill:\n", messages[0].Text);
+            Assert.Equal(ChatRole.System, messages[1].Role);
+            Assert.Equal("Frozen scenario context", messages[1].Text);
+        });
+    }
+
+    [Fact]
     public async Task OptimizeAsyncRejectsHeldOutRegressionAndRetainsRejectedCandidate()
     {
         var target = new DelegateChatClient(_ => "same response");
@@ -270,6 +318,17 @@ public sealed partial class SkillOptOptimizerTests
         Id = id,
         ContentFingerprint = $"{id}|{text}",
         Messages = [new ChatMessage(ChatRole.User, text)]
+    };
+
+    private static SkillOptCase CreateFrozenCase(string id, string text) => new()
+    {
+        Id = id,
+        ContentFingerprint = $"{id}|frozen-context|{text}",
+        Messages =
+        [
+            new ChatMessage(ChatRole.System, "Frozen scenario context"),
+            new ChatMessage(ChatRole.User, text)
+        ]
     };
 
     private sealed class ScoreEvaluator(

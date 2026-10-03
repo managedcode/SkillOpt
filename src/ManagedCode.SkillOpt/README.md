@@ -5,12 +5,12 @@ ManagedCode.SkillOpt optimizes one Markdown Agent Skill in-process on .NET 10. I
 ## Install
 
 ```xml
-<PackageReference Include="ManagedCode.SkillOpt" Version="0.1.0" />
+<PackageReference Include="ManagedCode.SkillOpt" Version="0.1.1" />
 ```
 
 ## Run an optimization
 
-Create required, disjoint training and selection case sets, plus an optional disjoint test set. A case contains its stable id, the chat history for the task, any typed `EvaluationContext` values required by the evaluator, and a stable `ContentFingerprint` covering the complete prompt and evaluation context. Set `RunIdentity` to a stable identifier covering the target/optimizer models, evaluator profile, and candidate-gate policy. Configure a named `NumericMetric`, its expected range, and whether high or low values are better. Keep the target client fixed for the complete run; SkillOpt uses the same instance for every skill candidate.
+Create required, disjoint training and selection case sets, plus an optional disjoint test set. A case contains its stable id, the chat history for the task, any typed `EvaluationContext` values required by the evaluator, and a stable `ContentFingerprint` covering the complete prompt and evaluation context. Set `RunIdentity` to a stable identifier covering the target/optimizer models, evaluator profile, candidate-gate policy, and (when customized) target message-factory behavior. Configure a named `NumericMetric`, its expected range, and whether high or low values are better. Keep the target client fixed for the complete run; SkillOpt uses the same instance for every skill candidate.
 
 ```csharp
 var result = await SkillOptOptimizer.OptimizeAsync(new SkillOptRequest
@@ -20,6 +20,10 @@ var result = await SkillOptOptimizer.OptimizeAsync(new SkillOptRequest
     SelectionCases = validationCases,
     TestCases = testCases,
     TargetChatClient = frozenTargetClient,
+    // Optional: candidate and frozen case messages are passed separately on every rollout.
+    // Omit this property to preserve the built-in system-message composition behavior.
+    TargetMessageFactory = (caseMessages, candidateSkill) =>
+        [new ChatMessage(ChatRole.System, candidateSkill), .. caseMessages],
     OptimizerChatClient = optimizerClient,
     Evaluator = evaluator,
     EvaluationChatConfiguration = evaluatorChatConfiguration,
@@ -56,6 +60,8 @@ static bool IsPrivacySafe(SkillOptCaseScore score) =>
 ```
 
 The selection split gates every candidate. Set `ScoreDirection` to `LowerIsBetter` for metrics such as privacy-event counts; the optimizer normalizes both directions to a higher-is-better objective. Every final per-case report preserves all official evaluator metrics and their typed numeric, boolean, or string values, reasons, interpretations, and diagnostics. An optional `CandidateGate` receives the complete selection evidence and may reject a candidate even when its mean objective score improves. Include the identity/version of that policy in `RunIdentity`.
+
+`TargetMessageFactory` is called for initial, training, selection, and final test rollouts. It receives the untouched case message list and the current candidate skill as separate arguments; it returns the exact target conversation. Use it when candidate skill must be a distinct System message while the case's frozen System context remains intact. The factory does not change evaluator contexts or optimizer prompt content. Its stable behavior/version belongs in `RunIdentity` so a resume cannot silently change target composition.
 
 The test split is optional and, when supplied, is evaluated only for final baseline and best-skill reporting. An omitted test split returns reports with `CaseCount = 0`, `MeanScore = null`, and no case rows; it never reports a fabricated zero score. Split ids and full-content fingerprints must be disjoint. `ContentFingerprint` lets hosts include non-text and evaluator-context data without putting hidden references in the optimizer prompt. `RunIdentity` is combined with the initial skill, all split identities, and optimization options to reject incompatible resumes. The async checkpoint callback is awaited before every target, optimizer, or evaluator call and at safe boundaries. It records reserved usage before the external call; an interrupted in-flight operation is marked unsafe to resume because its effect may be uncertain. Safe checkpoints are emitted at completed step/epoch boundaries and can be passed back through `ResumeState`. Use the same cases, client/model configuration, options, policy, and seed when resuming.
 

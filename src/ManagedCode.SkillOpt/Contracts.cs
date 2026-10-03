@@ -283,6 +283,12 @@ public sealed record SkillOptRequest
     public required IReadOnlyList<SkillOptCase> TestCases { get; init; }
     /// <summary>Fixed target-model client used to execute each case.</summary>
     public required IChatClient TargetChatClient { get; init; }
+    /// <summary>
+    /// Optional caller-owned message composition for target rollouts. Receives the original case messages and the
+    /// current candidate skill separately so hosts can keep frozen scenario context intact while supplying skill text.
+    /// Include the factory's stable behavior/version in <see cref="RunIdentity"/> when using this callback.
+    /// </summary>
+    public Func<IReadOnlyList<ChatMessage>, string, IReadOnlyList<ChatMessage>>? TargetMessageFactory { get; init; }
     /// <summary>Optimizer client used for reflection and text updates.</summary>
     public required IChatClient OptimizerChatClient { get; init; }
     /// <summary>Microsoft.Extensions.AI evaluator used to measure model responses.</summary>
