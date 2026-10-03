@@ -4,6 +4,11 @@ All notable changes to SkillOpt are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/) and the format is based on
 [Keep a Changelog](https://keepachangelog.com/).
 
+## ManagedCode.SkillOpt .NET 0.1.2 - 2026-10-03
+
+### Added
+- Expose Microsoft evaluation interpretation failure as nullable typed per-metric evidence, preserving it through selection reports and result serialization for consumer hard gates. Checkpoint run state remains scalar optimizer progress, not a metric report.
+
 ## ManagedCode.SkillOpt .NET 0.1.1 - 2026-10-03
 
 ### Added

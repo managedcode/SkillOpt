@@ -254,7 +254,11 @@ public sealed record SkillOptMetricEvidence(
     string? TextValue,
     string? Reason,
     string? Interpretation,
-    IReadOnlyList<SkillOptEvaluationDiagnostic> Diagnostics);
+    IReadOnlyList<SkillOptEvaluationDiagnostic> Diagnostics)
+{
+    /// <summary>Whether the official evaluator interpreted this metric as a failed outcome; null means no interpretation was supplied.</summary>
+    public bool? InterpretationFailed { get; init; }
+}
 
 /// <summary>Candidate text plus all official evaluator evidence from its selection split.</summary>
 public sealed record SkillOptCandidateEvaluation(string CandidateSkill, SkillOptSplitReport SelectionReport);

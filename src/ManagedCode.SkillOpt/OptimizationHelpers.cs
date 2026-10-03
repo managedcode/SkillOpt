@@ -150,7 +150,10 @@ internal static class OptimizationHelpers
         return new SkillOptMetricEvidence(metric.Name, metric.GetType().Name, numeric, boolean, text,
             metric.Reason, metric.Interpretation?.ToString(),
             metric.Diagnostics?.Select(static diagnostic =>
-                new SkillOptEvaluationDiagnostic(diagnostic.Severity, diagnostic.Message)).ToArray() ?? []);
+                new SkillOptEvaluationDiagnostic(diagnostic.Severity, diagnostic.Message)).ToArray() ?? [])
+        {
+            InterpretationFailed = metric.Interpretation?.Failed
+        };
     }
 
     public static string ReadJson(string response)

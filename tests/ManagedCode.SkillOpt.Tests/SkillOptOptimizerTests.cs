@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.AI.Evaluation;
 using Xunit;
@@ -275,6 +276,44 @@ public sealed partial class SkillOptOptimizerTests
     }
 
     [Fact]
+    public async Task OptimizeAsyncPreservesTypedFailedInterpretationForSelectionGatesAndReports()
+    {
+        SkillOptSplitReport? selectionReport = null;
+        var target = new DelegateChatClient(messages =>
+            messages.First(message => message.Role == ChatRole.System).Text.Contains("Better instruction", StringComparison.Ordinal)
+                ? "candidate answer" : "baseline answer");
+        var optimizer = new DelegateChatClient(_ => "{\"edits\":[{\"op\":\"append\",\"content\":\"Better instruction\"}]}");
+        var request = CreateRequest(target, optimizer, new ScoreEvaluator(
+            messages => messages.First(message => message.Role == ChatRole.System).Text.Contains("Better instruction", StringComparison.Ordinal) ? 0.8 : 0.2,
+            interpretationFailed: _ => true)) with
+        {
+            Options = CreateOptions() with { MetricMinimum = 0, MetricMaximum = 1 },
+            CandidateGate = candidate =>
+            {
+                selectionReport = candidate.SelectionReport;
+                return candidate.SelectionReport.Cases.All(testCase =>
+                    testCase.Metrics.Single(metric => metric.Name == "quality").InterpretationFailed is not true);
+            }
+        };
+
+        var result = await SkillOptOptimizer.OptimizeAsync(request);
+
+        var selectedCase = Assert.Single(Assert.IsType<SkillOptSplitReport>(selectionReport).Cases);
+        var selectedMetric = Assert.Single(selectedCase.Metrics);
+        Assert.Equal(0.8, selectedMetric.NumericValue);
+        Assert.True(selectedMetric.InterpretationFailed);
+        Assert.Equal("reject_policy_gate", Assert.Single(result.State.History).Action);
+
+        var finalMetric = Assert.Single(Assert.Single(result.BestTest.Cases).Metrics);
+        Assert.Equal(0.2, finalMetric.NumericValue);
+        Assert.True(finalMetric.InterpretationFailed);
+        var selectionRoundTrip = JsonSerializer.Deserialize<SkillOptSplitReport>(JsonSerializer.Serialize(selectionReport));
+        Assert.True(Assert.Single(Assert.Single(Assert.IsType<SkillOptSplitReport>(selectionRoundTrip).Cases).Metrics).InterpretationFailed);
+        var resultRoundTrip = JsonSerializer.Deserialize<SkillOptResult>(JsonSerializer.Serialize(result));
+        Assert.True(Assert.Single(Assert.Single(Assert.IsType<SkillOptResult>(resultRoundTrip).BestTest.Cases).Metrics).InterpretationFailed);
+    }
+
+    [Fact]
     public async Task OptimizeAsyncFailsClosedOnOutOfRangeScore()
     {
         var request = CreateRequest(new DelegateChatClient(_ => "success"), new DelegateChatClient(_ => "{}"),
@@ -334,7 +373,8 @@ public sealed partial class SkillOptOptimizerTests
     private sealed class ScoreEvaluator(
         Func<IEnumerable<ChatMessage>, double> score,
         bool returnError = false,
-        Func<IEnumerable<ChatMessage>, double>? privacyMetric = null) : IEvaluator
+        Func<IEnumerable<ChatMessage>, double>? privacyMetric = null,
+        Func<IEnumerable<ChatMessage>, bool>? interpretationFailed = null) : IEvaluator
     {
         public IReadOnlyCollection<string> EvaluationMetricNames { get; } = privacyMetric is null
             ? ["quality"]
@@ -349,6 +389,11 @@ public sealed partial class SkillOptOptimizerTests
         {
             cancellationToken.ThrowIfCancellationRequested();
             var metric = new NumericMetric("quality", score(messages));
+            if (interpretationFailed is not null)
+            {
+                metric.Interpretation = new EvaluationMetricInterpretation(
+                    EvaluationRating.Good, interpretationFailed(messages), "Evaluator-defined quality threshold failed.");
+            }
             if (returnError)
             {
                 metric.Diagnostics = [EvaluationDiagnostic.Error("Evaluation failed.")];
